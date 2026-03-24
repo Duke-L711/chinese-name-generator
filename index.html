@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Name Generator | 中文名字生成器</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Serif SC', Georgia, serif;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #1a0505 0%, #6b1010 50%, #c05010 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 16px 60px;
+    }
+
+    /* Language buttons */
+    .lang-bar {
+      position: fixed;
+      top: 12px; right: 16px;
+      display: flex; gap: 6px;
+      z-index: 100;
+    }
+    .lang-bar button {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(201,168,76,0.5);
+      color: #f0d060;
+      padding: 4px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      transition: 0.2s;
+    }
+    .lang-bar button:hover,
+    .lang-bar button.active {
+      background: #c9a84c;
+      color: #1a0505;
+      border-color: #c9a84c;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 2.8rem;
+      color: #f0d060;
+      letter-spacing: 4px;
+      text-shadow: 0 0 30px rgba(240,160,48,0.6);
+      margin: 16px 0 8px;
+    }
+    header p {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.65);
+      letter-spacing: 1px;
+    }
+
+    /* Card */
+    .card {
+      background: #fdf5e6;
+      border-radius: 6px;
+      padding: 32px 36px;
+      width: 100%;
+      max-width: 640px;
+      box-shadow: 0 12px 50px rgba(0,0,0,0.5);
+      border-top: 4px solid #8b1a1a;
+    }
+
+    /* Form */
+    .field { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #8b1a1a;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    input[type=text], input[type=date], input[type=password], textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d8c49a;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.92rem;
+      background: white;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus { border-color: #8b1a1a; }
+    textarea { resize: vertical; min-height: 64px; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* Gender */
+    .gender-group { display: flex; gap: 8px; }
+    .gender-group input { display: none; }
+    .gender-group label {
+      flex: 1; text-align: center;
+      padding: 9px 4px;
+      border: 1px solid #d8c49a;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 400;
+      background: white;
+      letter-spacing: 0;
+      transition: 0.2s;
+    }
+    .gender-group input:checked + label { background: #8b1a1a; border-color: #8b1a1a; color: white; }
+    .gender-group label:hover { border-color: #8b1a1a; }
+
+    /* Submit */
+    button[type=submit] {
+      width: 100%;
+      padding: 13px;
+      background: #8b1a1a;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 4px;
+    }
+    button[type=submit]:hover { background: #a02020; transform: translateY(-1px); }
+    button[type=submit]:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Loading */
+    #loading {
+      display: none;
+      text-align: center;
+      padding: 28px 0;
+    }
+    #loading .chars {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 2.8rem;
+      color: #8b1a1a;
+      letter-spacing: 12px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    #loading p { color: #999; font-size: 0.85rem; margin-top: 10px; font-style: italic; }
+    @keyframes pulse {
+      0%,100% { opacity: 0.3; transform: scale(0.95); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    /* Error */
+    .error {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      color: #c53030;
+      padding: 10px 14px;
+      border-radius: 3px;
+      font-size: 0.83rem;
+      margin-top: 14px;
+    }
+
+    /* Result */
+    #result { display: none; margin-top: 24px; }
+
+    .name-box {
+      background: linear-gradient(135deg, #1c0a0a, #3d1010);
+      border-radius: 4px;
+      text-align: center;
+      padding: 28px 20px;
+      margin-bottom: 18px;
+    }
+    .name-box .chars {
+      font-family: 'Ma Shan Zheng', cursive;
+      font-size: 4.5rem;
+      color: #f0d060;
+      letter-spacing: 14px;
+      text-shadow: 0 0 25px rgba(240,160,48,0.5);
+    }
+    .name-box .pinyin {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 6px;
+      margin-top: 8px;
+    }
+
+    .panels { border: 1px solid #d8c49a; border-radius: 4px; overflow: hidden; }
+    .panel-title {
+      background: rgba(139,26,26,0.07);
+      padding: 9px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #8b1a1a;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #d8c49a;
+    }
+    .panel-body {
+      padding: 14px;
+      font-size: 0.88rem;
+      line-height: 1.8;
+      color: #333;
+      border-bottom: 1px solid #d8c49a;
+    }
+
+    .char-cards {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      padding: 14px;
+      border-bottom: 1px solid #d8c49a;
+    }
+    .char-card {
+      flex: 1; min-width: 80px;
+      text-align: center;
+      padding: 12px 8px;
+      background: #fdf5e6;
+      border: 1px solid #d8c49a;
+      border-radius: 4px;
+    }
+    .char-card .c { font-family: 'Ma Shan Zheng', cursive; font-size: 2.2rem; color: #8b1a1a; display: block; }
+    .char-card .p { font-size: 0.8rem; color: #c9a84c; font-weight: 700; display: block; margin: 4px 0; }
+    .char-card .m { font-size: 0.74rem; color: #555; line-height: 1.4; }
+
+    .actions { display: flex; gap: 10px; margin-top: 14px; }
+    .btn-copy, .btn-again {
+      flex: 1; padding: 9px;
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+    }
+    .btn-copy { background: transparent; border: 1px solid #8b1a1a; color: #8b1a1a; }
+    .btn-copy:hover { background: #8b1a1a; color: white; }
+    .btn-again { background: transparent; border: 1px solid #d8c49a; color: #888; }
+    .btn-again:hover { border-color: #8b1a1a; color: #8b1a1a; }
+
+    footer {
+      color: rgba(255,255,255,0.3);
+      font-size: 0.72rem;
+      text-align: center;
+      margin-top: 28px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 22px 16px; }
+      .row { grid-template-columns: 1fr; }
+      header h1 { font-size: 2rem; }
+      .name-box .chars { font-size: 3rem; letter-spacing: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Language bar -->
+<div class="lang-bar">
+  <button onclick="setLang('en')" class="active">EN</button>
+  <button onclick="setLang('zh')">中文</button>
+  <button onclick="setLang('es')">ES</button>
+  <button onclick="setLang('fr')">FR</button>
+</div>
+
+<!-- Header -->
+<header>
+  <!-- Lanterns -->
+  <svg width="200" height="60" viewBox="0 0 200 60">
+    <path d="M0,4 Q50,0 100,4 Q150,8 200,4" fill="none" stroke="#c9a84c" stroke-width="0.8" opacity="0.7"/>
+    <line x1="50" y1="4" x2="50" y2="13" stroke="#c9a84c" stroke-width="1.2"/>
+    <ellipse cx="50" cy="28" rx="12" ry="17" fill="#8b1a1a" stroke="#c9a84c" stroke-width="1"/>
+    <text x="50" y="33" text-anchor="middle" font-family="Ma Shan Zheng,serif" font-size="13" fill="#f0d060">福</text>
+    <line x1="50" y1="45" x2="50" y2="53" stroke="#c9a84c" stroke-width="1"/>
+    <line x1="100" y1="4" x2="100" y2="11" stroke="#c9a84c" stroke-width="1.3"/>
+    <ellipse cx="100" cy="28" rx="16" ry="21" fill="#8b1a1a" stroke="#c9a84c" stroke-width="1.2"/>
+    <text x="100" y="34" text-anchor="middle" font-family="Ma Shan Zheng,serif" font-size="17" fill="#f0d060">名</text>
+    <line x1="100" y1="49" x2="100" y2="57" stroke="#c9a84c" stroke-width="1"/>
+    <line x1="150" y1="4" x2="150" y2="13" stroke="#c9a84c" stroke-width="1.2"/>
+    <ellipse cx="150" cy="28" rx="12" ry="17" fill="#8b1a1a" stroke="#c9a84c" stroke-width="1"/>
+    <text x="150" y="33" text-anchor="middle" font-family="Ma Shan Zheng,serif" font-size="13" fill="#f0d060">运</text>
+    <line x1="150" y1="45" x2="150" y2="53" stroke="#c9a84c" stroke-width="1"/>
+  </svg>
+  <h1 id="h-title">寻找你的中文名</h1>
+  <p id="h-sub">Discover Your Chinese Name · 探索你的中文身份</p>
+</header>
+
+<!-- Main card -->
+<div class="card">
+  <form id="form" onsubmit="generate(event)">
+
+    <div class="field">
+      <label id="l-name">YOUR NAME</label>
+      <input type="text" id="name" required placeholder="e.g. Alexander, María, Jean...">
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label id="l-gender">GENDER</label>
+        <div class="gender-group">
+          <input type="radio" name="gender" id="g-m" value="male" checked>
+          <label for="g-m" id="l-male">♂ Male</label>
+          <input type="radio" name="gender" id="g-f" value="female">
+          <label for="g-f" id="l-female">♀ Female</label>
+          <input type="radio" name="gender" id="g-o" value="other">
+          <label for="g-o" id="l-other">◈ Other</label>
+        </div>
+      </div>
+      <div class="field">
+        <label id="l-bday">BIRTHDAY</label>
+        <input type="date" id="birthday">
+      </div>
+    </div>
+
+    <div class="field">
+      <label id="l-place">BIRTHPLACE</label>
+      <input type="text" id="birthplace" placeholder="e.g. Paris, France">
+    </div>
+
+    <div class="field">
+      <label id="l-elems">PREFERRED MEANINGS / ELEMENTS</label>
+      <textarea id="elements" placeholder="e.g. wisdom, courage, nature, ocean..."></textarea>
+    </div>
+
+    <button type="submit" id="btn-submit">✦ &nbsp;<span id="l-btn">FIND MY CHINESE NAME</span>&nbsp; ✦</button>
+  </form>
+
+  <div id="loading">
+    <div class="chars">命 · 名 · 字</div>
+    <p id="l-loading">Consulting the ancient scrolls...</p>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div id="result">
+    <div class="name-box">
+      <div class="chars" id="r-chars">—</div>
+      <div class="pinyin" id="r-pinyin">—</div>
+    </div>
+    <div class="panels">
+      <div class="panel-title" id="l-pron">PRONUNCIATION GUIDE</div>
+      <div class="panel-body" id="r-pron"></div>
+      <div class="panel-title" id="l-chars">CHARACTER MEANINGS</div>
+      <div class="char-cards" id="r-char-cards"></div>
+      <div class="panel-title" id="l-meaning">NAME MEANING</div>
+      <div class="panel-body" id="r-meaning"></div>
+      <div class="panel-title" id="l-why">WHY THIS NAME FOR YOU</div>
+      <div class="panel-body" id="r-why"></div>
+    </div>
+    <div class="actions">
+      <button class="btn-copy" onclick="copyName()">◈ <span id="l-copy">Copy Name</span></button>
+      <button class="btn-again" onclick="reset()" id="l-again">↻ Generate Another</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>中文名字生成器 · Chinese Name Generator</p>
+  <p>Powered by OpenRouter AI</p>
+</footer>
+
+<script>
+const API_KEY = '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';
+const MODEL   = 'arcee-ai/trinity-large-preview:free';
+
+// ── Translations ──────────────────────────────────────────────────────────────
+const LANG = {
+  en: {
+    title:'Find Your Chinese Name', sub:'Discover Your Chinese Identity · 探索你的中文身份',
+    name:'YOUR NAME', gender:'GENDER', bday:'BIRTHDAY', place:'BIRTHPLACE',
+    elems:'PREFERRED MEANINGS / ELEMENTS', btn:'FIND MY CHINESE NAME',
+    loading:'Consulting the ancient scrolls...', copy:'Copy Name', copied:'Copied!',
+    again:'↻ Generate Another', pron:'PRONUNCIATION GUIDE',
+    chars:'CHARACTER MEANINGS', meaning:'NAME MEANING', why:'WHY THIS NAME FOR YOU',
+    male:'♂ Male', female:'♀ Female', other:'◈ Other',
+    errName:'Please enter your name.', errFail:'Something went wrong. Details: ',
+    pName:'e.g. Alexander, María, Jean...', pPlace:'e.g. Paris, France', pElems:'e.g. wisdom, courage, nature...'
+  },
+  zh: {
+    title:'寻找你的中文名', sub:'探索你独特的中文身份',
+    name:'你的姓名', gender:'性别', bday:'生日', place:'出生地',
+    elems:'偏好的寓意 / 元素', btn:'生成我的中文名',
+    loading:'正在查阅古籍，推演天命……', copy:'复制名字', copied:'已复制！',
+    again:'↻ 再生成一个', pron:'发音指南',
+    chars:'字义解析', meaning:'名字寓意', why:'为何这个名字适合你',
+    male:'♂ 男', female:'♀ 女', other:'◈ 其他',
+    errName:'请输入您的姓名。', errFail:'出错了，请重试。详情：',
+    pName:'例如：Alexander、María……', pPlace:'例如：巴黎，法国', pElems:'例如：智慧、勇气、自然……'
+  },
+  es: {
+    title:'Encuentra Tu Nombre Chino', sub:'Descubre tu identidad china · 探索你的中文身份',
+    name:'TU NOMBRE', gender:'GÉNERO', bday:'FECHA DE NACIMIENTO', place:'LUGAR DE NACIMIENTO',
+    elems:'SIGNIFICADOS / ELEMENTOS', btn:'ENCONTRAR MI NOMBRE CHINO',
+    loading:'Consultando los pergaminos...', copy:'Copiar Nombre', copied:'¡Copiado!',
+    again:'↻ Generar Otro', pron:'PRONUNCIACIÓN',
+    chars:'SIGNIFICADO DE CARACTERES', meaning:'SIGNIFICADO DEL NOMBRE', why:'POR QUÉ ESTE NOMBRE',
+    male:'♂ Masculino', female:'♀ Femenino', other:'◈ Otro',
+    errName:'Ingresa tu nombre.', errFail:'Algo salió mal. Detalles: ',
+    pName:'ej. Alejandro, María...', pPlace:'ej. París, Francia', pElems:'ej. sabiduría, valentía...'
+  },
+  fr: {
+    title:'Trouvez Votre Nom Chinois', sub:'Découvrez votre identité chinoise · 探索你的中文身份',
+    name:'VOTRE NOM', gender:'GENRE', bday:'DATE DE NAISSANCE', place:'LIEU DE NAISSANCE',
+    elems:'SIGNIFICATIONS / ÉLÉMENTS', btn:'TROUVER MON NOM CHINOIS',
+    loading:'Consultation des parchemins...', copy:'Copier le Nom', copied:'Copié !',
+    again:'↻ Générer un Autre', pron:'PRONONCIATION',
+    chars:'SIGNIFICATION DES CARACTÈRES', meaning:'SIGNIFICATION DU NOM', why:'POURQUOI CE NOM',
+    male:'♂ Masculin', female:'♀ Féminin', other:'◈ Autre',
+    errName:'Veuillez entrer votre nom.', errFail:'Une erreur. Détails : ',
+    pName:'ex. Alexandre, María...', pPlace:'ex. Paris, France', pElems:'ex. sagesse, courage...'
+  }
+};
+
+let lang = localStorage.getItem('lang') || 'en';
+let lastResult = null;
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.querySelectorAll('.lang-bar button').forEach(b =>
+    b.classList.toggle('active', b.textContent.toLowerCase() === (l === 'zh' ? '中文' : l))
+  );
+  const t = LANG[l];
+  document.getElementById('h-title').textContent   = t.title;
+  document.getElementById('h-sub').textContent     = t.sub;
+  document.getElementById('l-name').textContent    = t.name;
+  document.getElementById('l-gender').textContent  = t.gender;
+  document.getElementById('l-bday').textContent    = t.bday;
+  document.getElementById('l-place').textContent   = t.place;
+  document.getElementById('l-elems').textContent   = t.elems;
+  document.getElementById('l-btn').textContent     = t.btn;
+  document.getElementById('l-loading').textContent = t.loading;
+  document.getElementById('l-copy').textContent    = t.copy;
+  document.getElementById('l-again').textContent   = t.again;
+  document.getElementById('l-pron').textContent    = t.pron;
+  document.getElementById('l-chars').textContent   = t.chars;
+  document.getElementById('l-meaning').textContent = t.meaning;
+  document.getElementById('l-why').textContent     = t.why;
+  document.getElementById('l-male').textContent    = t.male;
+  document.getElementById('l-female').textContent  = t.female;
+  document.getElementById('l-other').textContent   = t.other;
+  document.getElementById('name').placeholder        = t.pName;
+  document.getElementById('birthplace').placeholder  = t.pPlace;
+  document.getElementById('elements').placeholder    = t.pElems;
+}
+
+async function generate(e) {
+  e.preventDefault();
+  const t        = LANG[lang];
+  const name     = document.getElementById('name').value.trim();
+  const gender   = document.querySelector('input[name=gender]:checked').value;
+  const birthday = document.getElementById('birthday').value;
+  const place    = document.getElementById('birthplace').value.trim();
+  const elems    = document.getElementById('elements').value.trim();
+  const langFull = { en:'English', zh:'Chinese (Simplified)', es:'Spanish', fr:'French' };
+
+  if (!name) { showError(t.errName); return; }
+  hideError();
+  show('loading'); hide('form'); hide('result');
+
+  const prompt = `You are a Chinese name master (起名大师). Generate a Chinese name for:
+- Name: ${name}, Gender: ${gender}
+- Birthday: ${birthday || 'not given'}, Birthplace: ${place || 'not given'}
+- Preferred themes: ${elems || 'none'}
+
+Rules:
+1. Use actual Chinese characters (汉字) in "characters" — never pinyin there.
+2. Format: 1-char surname + 1–2 char given name.
+3. Pick beautiful, auspicious characters fitting the person.
+
+Respond in ${langFull[lang]}. Return only valid JSON:
+{
+  "characters": "李明",
+  "pinyin": "Lǐ Míng",
+  "pronunciationGuide": "...",
+  "characterMeanings": [
+    {"char":"李","pinyin":"Lǐ","meaning":"..."},
+    {"char":"明","pinyin":"Míng","meaning":"..."}
+  ],
+  "overallMeaning": "...",
+  "whyThisName": "..."
+}`;
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          { role: 'system', content: 'You are a Chinese name master. Reply with valid JSON only, no markdown.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 1000
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw  = data.choices?.[0]?.message?.content || '';
+    const json = raw.match(/\{[\s\S]*\}/)?.[0];
+    if (!json) throw new Error('No JSON in response.');
+
+    lastResult = JSON.parse(json);
+    showResult(lastResult);
+
+  } catch (err) {
+    show('form'); hide('loading');
+    showError(t.errFail + err.message);
+  }
+}
+
+function showResult(r) {
+  hide('loading'); show('form');
+  document.getElementById('r-chars').textContent   = r.characters || '—';
+  document.getElementById('r-pinyin').textContent  = r.pinyin     || '—';
+  document.getElementById('r-pron').textContent    = r.pronunciationGuide || '—';
+  document.getElementById('r-meaning').textContent = r.overallMeaning    || '—';
+  document.getElementById('r-why').textContent     = r.whyThisName       || '—';
+
+  const box = document.getElementById('r-char-cards');
+  box.innerHTML = '';
+  (r.characterMeanings || []).forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'char-card';
+    if (typeof c === 'string') {
+      const m = c.match(/^(\S+)\s*\(([^)]+)\)\s*[-–]?\s*(.*)$/);
+      d.innerHTML = m
+        ? `<span class="c">${m[1]}</span><span class="p">${m[2]}</span><span class="m">${m[3]}</span>`
+        : `<span class="m">${c}</span>`;
+    } else {
+      d.innerHTML = `<span class="c">${c.char||''}</span><span class="p">${c.pinyin||''}</span><span class="m">${c.meaning||''}</span>`;
+    }
+    box.appendChild(d);
+  });
+
+  show('result');
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function copyName() {
+  if (!lastResult) return;
+  const text = `${lastResult.characters}  ${lastResult.pinyin}`;
+  try { await navigator.clipboard.writeText(text); }
+  catch { document.execCommand('copy'); }
+  const el = document.getElementById('l-copy');
+  const orig = el.textContent;
+  el.textContent = LANG[lang].copied;
+  setTimeout(() => el.textContent = orig, 2000);
+}
+
+function reset() { hide('result'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function showError(msg) { const e = document.getElementById('error'); e.textContent = msg; e.style.display = 'block'; }
+function hideError() { document.getElementById('error').style.display = 'none'; }
+
+// Init
+setLang(lang);
+</script>
+</body>
+</html>
